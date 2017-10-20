@@ -86,7 +86,7 @@ def runSetup(setupscan, usedatabase, cursor, conn, debug=False):
 	if debug:
 		print >>sys.stderr, module, method
 		sys.stderr.flush()
-
+		
 	if setupscan['needsdatabase'] and not usedatabase:
 		return (False, {})
 
@@ -174,7 +174,7 @@ def gethash(filepath, filename, hashtypes, tlshmaxsize):
 
 ## continuously grab tasks (files) from a queue, tag ('prerun phase'), possibly unpack
 ## and recurse ('unpack'). Then run different scans per file ('leaf').
-def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, prerunmagic, magicscans, optmagicscans, processid, hashdict, llock, template, unpacktempdir, topleveldir, tempdir, outputhash, cursor, conn, scansourcecode, dumpoffsets, offsetdir, compressed, timeout, scan_binary_basename, tlshmaxsize):
+def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, prerunmagic, magicscans, optmagicscans, processid, hashdict, blacklistedfiles, llock, template, unpacktempdir, topleveldir, tempdir, outputhash, cursor, conn, scansourcecode, dumpoffsets, offsetdir, compressed, timeout, scan_binary_basename, tlshmaxsize, blacklist_2):
 	lentempdir = len(tempdir)
 	sourcecodequery = "select checksum from processed_file where checksum=%s limit 1"
 
@@ -207,7 +207,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 		except Exception, e:
 			blacklistscans.add((module, method))
 			continue
-
+			
 	## grab tasks from the queue continuously until there are no more tasks left
 	while True:
 		## reset the reports, blacklist, offsets and tags for each new scan
@@ -311,7 +311,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 				for r in res:
 					exactmatches.append(res)
 
-		blacklistedfiles = []
+		#blacklistedfiles = []
 		if cursor != None:
 			pass
 		## blacklisted file, not interested in further scanning
@@ -379,7 +379,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 
 				## make a copy before changing the environment
 				newenv = copy.deepcopy(unpackscan['environment'])
-
+					
 				if template != None:
 					templen = len(re.findall('%s', template))
 					if templen == 2:
@@ -392,9 +392,10 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 					exec "from %s import %s as bat_%s" % (module, method, method)
 				except Exception, e:
 					continue
-
+				
 				## run the known unpack method
 				scanres = eval("bat_%s(filetoscan, tempdir, newenv, debug=debug)" % (method))
+				
 				if scanres == ([], [], [], {}):
 					## no result, so move on to the next scan
 					continue
@@ -475,7 +476,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 					tags.append('text')
 				else:
 					tags.append('binary')
-
+					
 		if dumpoffsets:
 			## write pickles with offsets to disk
 			offsetpicklename = os.path.join(offsetdir, '%s-offsets.pickle' % filehash)
@@ -581,7 +582,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 			## prepend the most promising scans at offset 0 (if any)
 			scanfirst = sorted(scanfirst, key=lambda x: x['priority'], reverse=True)
 			unpackscans = scanfirst + unpackscans
-
+			
 			unpackreports['scans'] = []
 
 			blacklistignorescans = set()
@@ -657,7 +658,7 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 				tags = list(set(tags + scantags))
 				if extractor.inblacklist(0, blacklist) == filesize:
 					blacklisted = True
-
+					
 				## special case: the whole file was unpacked and blacklisted
 				## but 'blacklistignorescans' was set. Resubmitting into the queue is
 				## not a possibility
@@ -860,6 +861,36 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 					tags += list(set(tags + nt))
 
 			reports['tags'] = list(set(tags))
+			
+			## need to filter here (blacklist)
+			##
+
+			blacklist_2_set = set(blacklist_2)
+			
+			if ('identifier' in reports):
+				if (reports['identifier']['language'] == 'C'):
+					before = set(reports['identifier']['kernelsymbols'])
+					reports['identifier']['kernelsymbols'][:] = [items for items in reports['identifier']['kernelsymbols'] if items not in blacklist_2_set]
+					reports['identifier']['blacklisted']=list(set(before)-set(reports['identifier']['kernelsymbols']))
+					before = set(reports['identifier']['strings'])
+					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2_set]
+					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['strings']))
+					before = reports['identifier']['functionnames']
+					reports['identifier']['functionnames']=reports['identifier']['functionnames']-blacklist_2_set
+					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['functionnames']))
+					before = reports['identifier']['variablenames']
+					reports['identifier']['variablenames']=reports['identifier']['variablenames']-blacklist_2_set
+					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['variablenames']))
+				elif (reports['identifier']['language'] == 'Java'):
+					before = set(reports['identifier']['strings'])
+					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2_set]
+					reports['identifier']['blacklisted']=list(set(before)-set(reports['identifier']['strings']))
+					before = set(reports['identifier']['methods'])
+					reports['identifier']['methods'][:] = [items for items in reports['identifier']['methods'] if items not in blacklist_2_set]
+					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['methods']))
+					before = set(reports['identifier']['fields'])
+					reports['identifier']['fields'][:] = [items for items in reports['identifier']['fields'] if items not in blacklist_2_set]
+					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['fields']))
 			unpackreports['tags'] = list(set(unpackreports['tags'] + reports['tags']))
 
 			## write pickles with information to disk here to reduce memory usage
@@ -875,13 +906,14 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 			sys.stderr.flush()
 		scanqueue.task_done()
 
-def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, topleveldir, scan_binary, scandate, batcursors, batcons, debug, unpacktempdir):
+
+def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, topleveldir, scan_binary, scandate, batcursors, batcons, debug, unpacktempdir, whitelist):
 	## aggregate scans look at the entire result and possibly modify it.
 	## The best example is JAR files: individual .class files will not be
 	## very significant (or even insignificant), but combined results are.
 	## Because aggregate scans have to look at everything as a whole, these
 	## cannot be run in parallel.
-
+	
 	statistics = {}
 
 	for aggregatescan in aggregatescans:
@@ -895,7 +927,7 @@ def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, toplev
 
 		starttime = datetime.datetime.utcnow()
 		if debug:
-			print >>sys.stderr, "AGGREGATE BEGIN", module, method, starttime.isoformat()
+			print >>sys.stderr, "AGGREGATE BEGIN", method, datetime.datetime.utcnow().isoformat()
 			sys.stderr.flush()
 			scandebug = True
 
@@ -903,8 +935,12 @@ def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, toplev
 			exec "from %s import %s as bat_%s" % (module, method, method)
 		except Exception, e:
 			continue
+		aggregatescan['environment']['whitelist'] = whitelist
 
 		res = eval("bat_%s(unpackreports, scantempdir, topleveldir, processors, aggregatescan['environment'], batcursors, batcons, scandebug=scandebug, unpacktempdir=unpacktempdir)" % (method))
+
+
+
 		if res != None:
 			if res.keys() != []:
 				filehash = unpackreports[scan_binary]['checksum']
@@ -923,17 +959,17 @@ def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, toplev
 				leaf_file.close()
 		endtime = datetime.datetime.utcnow()
 		if debug:
-			print >>sys.stderr, "AGGREGATE END", method, endtime.isoformat()
+			print >>sys.stderr, "AGGREGATE END", method, datetime.datetime.utcnow().isoformat()
 		statistics[method] = endtime - starttime
 	return statistics
-
-## continuously grab tasks (files) from a queue and process
+	
+## continuously grab tasks (files) from a queue and process	
 def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn, debug, timeout):
-
+	
 	## import all methods defined in the scans
 	blacklistscans = set()
 	extensionsignore = []
-
+	
 	for postrunscan in postrunscans:
 		module = postrunscan['module']
 		method = postrunscan['method']
@@ -945,7 +981,7 @@ def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn,
 		ignore = False
 		if 'extensionsignore' in postrunscan:
 			extensionsignore = postrunscan['extensionsignore'].split(':')
-
+		
 	## grab tasks from the queue continuously until there are no more tasks
 	while True:
 		(filetoscan, unpackreports) = scanqueue.get(timeout=timeout)
@@ -1145,8 +1181,8 @@ def scanconfigsection(config, section, scanenv, batconf):
 		elif config.get(section, 'type') == 'aggregate':
 			if debug:
 				return(conf, 'aggregate', 'aggregate')
-			return(conf, 'aggregate', None)
-
+			return(conf, 'aggregate', None)		
+		
 ## arrays for storing data for the scans
 ## unpackscans: {name, module, method, ppoutput, priority}
 ## These are sorted by priority
@@ -1366,7 +1402,7 @@ def readconfig(config, configfilename):
 			else:
 				batconf['writeoutputfile'] = False
 		except:
-			batconf['writeoutputfile'] = True
+			batconf['writeoutputfile'] = False
 		try:
 			outputlite = config.get(section, 'outputlite')
 			if outputlite == 'yes':
@@ -1374,7 +1410,7 @@ def readconfig(config, configfilename):
 			else:
 				batconf['outputlite'] = False
 		except:
-			batconf['outputlite'] = False
+			batconf['outputlite'] = None
 		try:
 			configdir = config.get(section, 'configdirectory')
 			if not os.path.isdir(configdir):
@@ -1430,7 +1466,7 @@ def readconfig(config, configfilename):
 				batconf['compress'] = False
 		except:
 			batconf['compress'] = False
-
+			
 	## then process configurations of any plugins
 	## if defined.
 	if batconf['configdirectory'] != None:
@@ -1490,6 +1526,7 @@ def readconfig(config, configfilename):
 		sectionstoprocess.add(section)
 		sectionsseen.add(section)
 		(scanconfig, scantype, scandebug) = scanconfigres
+
 		if scandebug != None:
 			tmpbatconfdebug.add(scandebug)
 		if scantype == 'leaf':
@@ -1502,7 +1539,7 @@ def readconfig(config, configfilename):
 			postrunscans.append(scanconfig)
 		elif scantype == 'aggregate':
 			aggregatescans.append(scanconfig)
-
+			
 	if tmpbatconfdebug != set():
 		tmpbatconfdebug.update(batconf['debugphases'])
 		batconf['debugphases'] = list(tmpbatconfdebug)
@@ -1579,6 +1616,7 @@ def readconfig(config, configfilename):
 	prerunscans = sorted(prerunscans, key=lambda x: x['priority'], reverse=True)
 	leafscans = sorted(leafscans, key=lambda x: x['priority'], reverse=True)
 	aggregatescans = sorted(aggregatescans, key=lambda x: x['priority'], reverse=True)
+	
 	return {'batconfig': batconf, 'unpackscans': unpackscans, 'leafscans': leafscans, 'prerunscans': prerunscans, 'postrunscans': postrunscans, 'aggregatescans': aggregatescans, 'errors': errors}
 
 def dumpData(unpackreports, scans, tempdir, packpickles):
@@ -1675,7 +1713,7 @@ def writeDumpfile(unpackreports, scans, processamount, outputfile, configfile, t
 	dumpfile = tarfile.open(outputfile, 'w:gz')
 	oldcwd = os.getcwd()
 	os.chdir(tempdir)
-
+	
 	## write some statistics about BAT and the underlying
 	## platform, mostly for debugging purposes
 	statisticsfilename = 'STATISTICS'
@@ -1718,13 +1756,13 @@ def writeDumpfile(unpackreports, scans, processamount, outputfile, configfile, t
 		else:
 			shutil.copy(configfile, '.')
 		dumpfile.add(os.path.basename(configfile))
-
+		
 	## By default pack all the JSON files in the current directory
 	dirfiles = os.listdir('.')
 	jsonfiles = filter(lambda x: x.endswith('.json'), dirfiles)
 	for j in jsonfiles:
 		dumpfile.add(j)
-
+		
 	if scans['batconfig']['extrapack'] != []:
 		for e in scans['batconfig']['extrapack']:
 			if os.path.isabs(e):
@@ -1739,7 +1777,6 @@ def writeDumpfile(unpackreports, scans, processamount, outputfile, configfile, t
 				dumpfile.add(e)
 	if not lite:
 		dumpfile.add('data')
-
 	## optionally pack the Python pickles
 	if packpickles:
 		dumpfile.add('scandata.pickle')
@@ -1786,7 +1823,6 @@ def runscan(scans, binaries, batversion):
 	debug = scans['batconfig']['debug']
 	debugphases = scans['batconfig']['debugphases']
 	compressed = scans['batconfig']['compress']
-
 	## first split the scans per 'magic' (needed) and
 	## 'optmagic' (optional).
 	magicscans = []
@@ -1997,6 +2033,7 @@ def runscan(scans, binaries, batversion):
 			else:
 				cursor = None
 				conn = None
+
 			setupres = runSetup(sscan, usedatabase, cursor, conn, aggregatedebug)
 			(setuprun, newenv) = setupres
 			if not setuprun:
@@ -2177,6 +2214,7 @@ def runscan(scans, binaries, batversion):
 		## have already been processed, so duplicates can be
 		## detected.
 		hashdict = scanmanager.dict()
+		blacklistedfiles = []
 
 		map(lambda x: scanqueue.put(x), scantasks)
 		for i in range(0,processamount):
@@ -2186,7 +2224,7 @@ def runscan(scans, binaries, batversion):
 			else:
 				cursor = None
 				conn = None
-			p = multiprocessing.Process(target=scan, args=(scanqueue, reportqueue, finalunpackscans, finalleafscans, scans['prerunscans'], prerunignore, prerunmagic, magicscans, optmagicscans, i, hashdict, lock, template, unpackdirectory, topleveldir, scantempdir, outputhash, cursor, conn, scansourcecode, scans['batconfig']['dumpoffsets'], offsetdir, compressed, timeout, scan_binary_basename, tlshmaxsize))
+			p = multiprocessing.Process(target=scan, args=(scanqueue, reportqueue, finalunpackscans, finalleafscans, scans['prerunscans'], prerunignore, prerunmagic, magicscans, optmagicscans, i, hashdict, blacklistedfiles, lock, template, unpackdirectory, topleveldir, scantempdir, outputhash, cursor, conn, scansourcecode, scans['batconfig']['dumpoffsets'], offsetdir, compressed, timeout, scan_binary_basename, tlshmaxsize, scans['batconfig']['environment']['blacklist']))
 			processpool.append(p)
 			p.start()
 
@@ -2292,7 +2330,8 @@ def runscan(scans, binaries, batversion):
 		if scans['aggregatescans'] != []:
 			## because there are 'eval' statements the code to call aggregate scans
 			## has to be in a separate method
-			aggregatestatistics = aggregatescan(unpackreports, finalaggregatescans, processamount, scantempdir, topleveldir, scan_binary_basename, scandate, batcursors, batcons, aggregatedebug, unpackdirectory)
+			whitelist = scans['batconfig']['environment']['whitelist']
+			aggregatestatistics = aggregatescan(unpackreports, finalaggregatescans, processamount, scantempdir, topleveldir, scan_binary_basename, scandate, batcursors, batcons, aggregatedebug, unpackdirectory, whitelist)
 			statistics.update(aggregatestatistics)
 		endtime = datetime.datetime.utcnow()
 		if debug:
