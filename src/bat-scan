@@ -15,6 +15,7 @@ from optparse import OptionParser
 import ConfigParser
 import bat.bruteforcescan
 import datetime
+import json
 
 def main(argv):
 	batversion = 37
@@ -26,7 +27,9 @@ def main(argv):
 	parser.add_option("-d", "--directory", action="store", dest="fwdir", help="path to directory with files to be scanned", metavar="DIR")
 	parser.add_option("-u", "--outputdir", action="store", dest="outdir", help="path to directory to write results to", metavar="DIR")
 	parser.add_option("-v", "--version", action="store_true", dest="version", help="print version of BAT", metavar="VERSION")
-
+	parser.add_option("-l", "--blacklist", action="store", dest="blacklist", help="path to blacklist file", metavar="FILE")
+	parser.add_option("-w", "--whitelist", action="store", dest="whitelist", help="path to whitelist file", metavar="FILE")
+	
 	(options, args) = parser.parse_args()
 	if options.version:
 		print "Binary Analysis Tool %d" % batversion
@@ -39,6 +42,27 @@ def main(argv):
 	else:
 		parser.error("Need configuration file")
 
+	if options.blacklist != None:
+		try:
+        		blacklist_file = open(options.blacklist, 'r')
+        		blacklist = []
+        		blacklist_json = json.load(blacklist_file)["blacklist"]
+        		for entry in blacklist_json:
+        			blacklist.append(entry['identifier'])
+		except:
+			parser.error("Path to blacklist not correct, or corrupted file")
+	
+	if options.whitelist != None:
+		try:
+        		whitelist_file = open(options.whitelist, 'r')
+        		whitelist = []
+        		whitelist_json = json.load(whitelist_file)["whitelist"]
+        		for entry in whitelist_json:
+        			whitelist.append(entry['package'])
+        		
+		except:
+			parser.error("Path to whitelist not correct, or corrupted file")
+	
 	## first parse the configuration file
 	try:
 		config.readfp(configfile)
@@ -119,6 +143,8 @@ def main(argv):
 			if os.path.normpath(options.fwdir) == os.path.normpath(options.outdir):
 				parser.error("firmware directory and output directory cannot be the same")
 
+	scans['batconfig']['environment']['whitelist']=whitelist
+	scans['batconfig']['environment']['blacklist']=blacklist
 	scanfiles = []
 	if options.fw != None:
 		scanfiles.append((options.fw, options.outputfile))
