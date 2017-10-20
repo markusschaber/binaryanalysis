@@ -1,0 +1,20 @@
+{
+	"whitelist": [
+		{
+                "comment":"",
+                "package":"llvm"
+            	},
+		{
+                "comment":"",
+                "package":"asm"
+            	},
+		{
+                "comment":"",
+                "package":"dx"
+            	},
+		{
+                "comment":"",
+                "package":"netbeans"
+            	}
+		]
+}

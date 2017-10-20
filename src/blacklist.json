@@ -1,0 +1,37 @@
+{
+	"blacklist": [
+		{
+                "comment":"",
+                "identifier":"!This program cannot be run in DOS mode."
+            	},
+		{
+                "comment":"",
+                "identifier":"Richn"
+            	},
+		{
+                "comment":"",
+                "identifier":"`.rdata"
+            	},
+		{
+                "comment":"",
+                "identifier":"warning: hit a proxy class in superclass hierarchy"
+				},
+		{
+                "comment":"",
+                "identifier":"3S-Smart Software Solutions GmbH1"
+            	},
+		{
+                "comment":"",
+                "identifier":"Parallel unsquashfs: Using %d processor%s"
+            	},
+		{
+                "comment":"",
+                "identifier":"Failed to allocate xattr id table"
+            	},
+		{
+                "comment":"",
+                "identifier":"\t\t\t\t Mbytes"
+            	}
+		
+		]
+}
