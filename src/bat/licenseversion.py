@@ -53,7 +53,7 @@ are not removed.
 ## lookup tables for names of string caches and string cache scores
 stringsdbperlanguagetable = { 'C':                'stringscache_c'
                             , 'C#':               'stringscache_csharp'
-			    , 'Java':             'stringscache_java'
+                            , 'Java':             'stringscache_java'
                             , 'JavaScript':       'stringscache_javascript'
                             , 'PHP':              'stringscache_php'
                             , 'Python':           'stringscache_python'
@@ -537,6 +537,7 @@ def prune(uniques, package):
 
 def determinelicense_version_copyright(unpackreports, scantempdir, topleveldir, processors, scanenv, batcursors, batcons, scandebug=False, unpacktempdir=None):
 	## sanity check if the database really is there
+	
 	if batcursors[0] == None:
 		return None
 
@@ -591,7 +592,7 @@ def determinelicense_version_copyright(unpackreports, scantempdir, topleveldir, 
 			rankingfilesperlanguage[language].add(i)
 		else:
 			rankingfilesperlanguage[language] = set([i])
-
+	
 	if len(rankingfilesperlanguage) == 0:
 		return None
 
@@ -734,7 +735,7 @@ def determinelicense_version_copyright(unpackreports, scantempdir, topleveldir, 
 	#alluniques = set()
 	connectdb = False
 	for language in rankingfilesperlanguage:
-		if connectdb:
+		if connectdb: 
 			break
 		## keep a list of versions per sha256, since source files often are in more than one version
 		for rankingfile in rankingfilesperlanguage[language]:
@@ -1741,6 +1742,10 @@ def scanDynamic(scanstr, variables, scanenv, funccursor, funcconn, clones):
 ## First match string literals, then function names and variable names for various languages
 def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir, avgscores, clones, scandebug, unmatchedignorecache, lock):
 	## first some things that are shared between all scans
+	## the whitelist for determine if there are matches we surely know to be correct
+
+	whitelist=scanenv["whitelist"]
+	
 	if 'BAT_STRING_CUTOFF' in scanenv:
 		try:
 			stringcutoff = int(scanenv['BAT_STRING_CUTOFF'])
@@ -1770,6 +1775,12 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 	precomputequery = "select score from scores where stringidentifier=%s LIMIT 1"
 
 	while True:
+	
+		new_whitelist = []		
+		for pkgs_white in whitelist:
+			new_whitelist.append(pkgs_white)
+		new_whitelist = set(new_whitelist)
+	
 		## get a new task from the queue
 		(filehash, filename) = scanqueue.get(timeout=2592000)
 
@@ -1791,6 +1802,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 		lines = leafreports['identifier']['strings']
 
 		language = leafreports['identifier']['language']
+		
 
 		## this should of course not happen, but hey...
 		scanlines = True
@@ -2086,6 +2098,35 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					unmatchedignorecache[line] = 1
 					lock.release()
 					continue
+					
+			### here we create the sets for the whitelist filter ###
+			### we store a set for each package with the corresponding strings###
+			pkg_str={}
+			whitelist_str=[]
+					for result in res:
+						(package, sourcefilename) = result
+						if package in pkg_str:
+							pkg_str[package].add(line)
+						else:
+							pkg_str[package]=set(line)
+			
+			### a set with all strings of whitelisted packages is created ###
+			for i in new_whitelist:
+				if i in pkg_str:
+					whitelist_str.extend(pkg_str[i])
+			whitelist_str = set(whitelist_str)
+			
+			### all results are checked if the matched packages which are not an element of "new_whitelist" are a full part of "whitelist_str" ###
+			
+			toRemove = set()
+			for result in res:
+				(package, sourcefilename) = result
+				if package not in new_whitelist:
+					if (pkg_str[package].issubset(whitelist_str)):
+						toRemove.add(package)									
+			res[:]=[j for	j in res if j[0] not in toRemove]
+			
+			for line in lines:
 				if len(res) != 0:
 					## Assume:
 					## * database has no duplicates
@@ -2102,6 +2143,11 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					## is found.
 					## If the string is only found in one package the string is unique to the package
 					## so record it as such and add its length to a score.
+					
+					## Remove non whitelisted packages here before calculate a score
+					## If a string is not in a whitelisted package nothing happen
+					## Otherwise the whitelisted packages are hold and the others are dropped
+					
 					for result in res:
 						(package, sourcefilename) = result
 						if package in clones:
@@ -2312,8 +2358,12 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 			## packages), assign it to one package.  We do this by picking the
 			## package that would gain the highest score increment across all
 			## strings that are left.  This is repeated until no strings are left.
+			
+			## Remove here all other Packages if the string is in a whitelisted package
+			## This ensures that no "unneeded" packages are in the result set
 			pkgsScorePerString = {}
 			for stri in stringsLeft:
+				
 				pkgsSortedTmp = map(lambda x: {'package': x, 'uniquescore': uniqueScore.get(x, 0)}, stringsLeft[stri]['pkgs'])
 
 				## get the unique score per package and sort in reverse order
