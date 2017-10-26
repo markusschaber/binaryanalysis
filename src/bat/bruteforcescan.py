@@ -939,8 +939,6 @@ def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, toplev
 
 		res = eval("bat_%s(unpackreports, scantempdir, topleveldir, processors, aggregatescan['environment'], batcursors, batcons, scandebug=scandebug, unpacktempdir=unpacktempdir)" % (method))
 
-
-
 		if res != None:
 			if res.keys() != []:
 				filehash = unpackreports[scan_binary]['checksum']

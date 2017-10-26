@@ -79,7 +79,7 @@ def main(argv):
 		print "Clearing successfull."
 		conn.commit()
 		
-		query = "INSERT INTO avgstringscache_c SELECT package, AVG(score) FROM scores_c, stringscache_java WHERE scores_c.stringidentifier = stringscache_c.stringidentifier GROUP BY package"
+		query = "INSERT INTO avgstringscache_c SELECT package, AVG(score) FROM scores_c, stringscache_c WHERE scores_c.stringidentifier = stringscache_c.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_c successfull."

@@ -96,45 +96,50 @@ def main(argv):
 		
 
 	for language in supported_languages:
-		query = "create table if not exists scores_%s (stringidentifier text, packages int, score real)" % (language)
-		c.execute(query)
-		query = "create index if not exists scoresindex on scores_%s(stringidentifier)" % (language)
-		c.execute(query)
-		conn.commit()
+		try:
+			query = "create table if not exists scores_%s (stringidentifier text, packages int, score real)" % (language)
+			c.execute(query)
+			query = "create index if not exists scores_%s_index on scores_%s(stringidentifier)" % (language, language)
+			c.execute(query)
+			conn.commit()
 
-		query = "select distinct stringidentifier from stringscache_%s" % (language)
-		c.execute(query)
-		programstrings = c.fetchmany(10000)
-		while programstrings != []:
-			for p in programstrings:
-				pkgs = {}
-				filenames = {}
-
-				query = "select distinct package, filename from stringscache_" + language + " where stringidentifier=%s"
-				c2.execute(query,  p)
-				pfs = c2.fetchall()
-				packages = set(map(lambda x: x[0], pfs))
-
-				if len(packages) == 1:
-					score = float(len(p[0]))
-				else:
-					for pf in pfs:
-						(package, filename) = pf
-						if not filenames.has_key(filename):
-							filenames[filename] = [package]
-						else:   
-							filenames[filename] = list(set(filenames[filename] + [package]))
-					try:
-						score = float(len(p[0])) / pow(alpha, (len(filenames) - 1))
-					except Exception, e:
-						score = len(p[0]) / sys.maxint
-					## cut off for for example postgresql
-					if score < 1e-37:
-						score = 0.0
-				query = "insert into scores_" + language + "(stringidentifier, packages, score) values (%s,%s,%s)"
-				c2.execute(query, (p[0], len(packages), float(score)))
+			query = "select distinct stringidentifier from stringscache_%s" % (language)
+			c.execute(query)
 			programstrings = c.fetchmany(10000)
-	conn.commit()
+			while programstrings != []:
+				for p in programstrings:
+					pkgs = {}
+					filenames = {}
+
+					query = "select distinct package, filename from stringscache_" + language + " where stringidentifier=%s"
+					c2.execute(query,  p)
+					pfs = c2.fetchall()
+					packages = set(map(lambda x: x[0], pfs))
+	
+					if len(packages) == 1:
+						score = float(len(p[0]))
+					else:
+						for pf in pfs:
+							(package, filename) = pf
+							if not filenames.has_key(filename):
+								filenames[filename] = [package]
+							else:   
+								filenames[filename] = list(set(filenames[filename] + [package]))
+						try:
+							score = float(len(p[0])) / pow(alpha, (len(filenames) - 1))
+						except Exception, e:
+							score = len(p[0]) / sys.maxint
+						## cut off for for example postgresql
+						if score < 1e-37:
+							score = 0.0
+					query = "insert into scores_" + language + "(stringidentifier, packages, score) values (%s,%s,%s)"
+					c2.execute(query, (p[0], len(packages), float(score)))
+				programstrings = c.fetchmany(10000)
+			conn.commit()
+			print "Scores added for scores_%s" % (language)
+		except Exception, e:
+			print e
+			print "Scores-Update failed for scores_%s" % (language)
 	c2.close()
 	# print "vacuuming"
 	# c.execute("vacuum")
