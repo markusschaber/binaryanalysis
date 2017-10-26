@@ -618,6 +618,7 @@ def determinelicense_version_copyright(unpackreports, scantempdir, topleveldir, 
 			continue
 		if not language in scanenv['supported_languages']:
 			continue
+
 		## open the database containing all the strings that were extracted
 		## from source code.
 		conn = batcons[0]
@@ -1802,7 +1803,6 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 		lines = leafreports['identifier']['strings']
 
 		language = leafreports['identifier']['language']
-		
 
 		## this should of course not happen, but hey...
 		scanlines = True
@@ -1908,7 +1908,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 							matchedlines += 1
 							if uniquematch:
 								nrUniqueMatches += 1
-								#uniqueMatches[package].append((line, []))
+								uniqueMatches[package].append((line, []))
 						elif matchednonassigned:
 							linecount[line] = linecount[line] - 1
 							matchednonassignedlines += 1
@@ -2099,34 +2099,6 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					lock.release()
 					continue
 					
-			### here we create the sets for the whitelist filter ###
-			### we store a set for each package with the corresponding strings###
-			pkg_str={}
-			whitelist_str=[]
-					for result in res:
-						(package, sourcefilename) = result
-						if package in pkg_str:
-							pkg_str[package].add(line)
-						else:
-							pkg_str[package]=set(line)
-			
-			### a set with all strings of whitelisted packages is created ###
-			for i in new_whitelist:
-				if i in pkg_str:
-					whitelist_str.extend(pkg_str[i])
-			whitelist_str = set(whitelist_str)
-			
-			### all results are checked if the matched packages which are not an element of "new_whitelist" are a full part of "whitelist_str" ###
-			
-			toRemove = set()
-			for result in res:
-				(package, sourcefilename) = result
-				if package not in new_whitelist:
-					if (pkg_str[package].issubset(whitelist_str)):
-						toRemove.add(package)									
-			res[:]=[j for	j in res if j[0] not in toRemove]
-			
-			for line in lines:
 				if len(res) != 0:
 					## Assume:
 					## * database has no duplicates
@@ -2324,6 +2296,36 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					## for statistics it's nice to see how many lines were matched
 					matchedlines += 1
 
+			### here we create the sets for the whitelist filter ###
+			### we store a set for each package with the corresponding strings###
+			pkg_str={}
+			whitelist_str=[]
+			for line in lines:
+				if len(res) != 0:	
+					for result in res:
+						(package, sourcefilename) = result
+						if package in pkg_str:
+							pkg_str[package].add(line)
+						else:
+							pkg_str[package]=set(line)
+			
+			### a set with all strings of whitelisted packages is created ###
+			for i in new_whitelist:
+				if i in pkg_str:
+					whitelist_str.extend(pkg_str[i])
+			whitelist_str = set(whitelist_str)
+			
+			### all results are checked if the matched packages which are not an element of "new_whitelist" are a full part of "whitelist_str" ###
+			
+			toRemove = set()
+			for result in res:
+				(package, sourcefilename) = result
+				if package not in new_whitelist:
+					if (pkg_str[package].issubset(whitelist_str)):
+						toRemove.add(package)
+			#print toRemove
+			res[:]=[j for	j in res if j[0] not in toRemove]
+					
 			## clean up stringsLeft first
 			for l in stringsLeft.keys():
 				if linecount[stringsLeft[l]['string']] == 0:
@@ -2658,7 +2660,7 @@ def licensesetup(scanenv, cursor, conn, debug=False):
 			newenv['BAT_KERNELSYMBOL_SCAN'] = 1
 		if 'linuxkernelfunctionnamecache' in tablenames:
 			newenv['BAT_KERNELFUNCTION_SCAN'] = 1
-
+	
 	if 'renames' in tablenames:
 		newenv['HAVE_CLONE_DB'] = 1
 
