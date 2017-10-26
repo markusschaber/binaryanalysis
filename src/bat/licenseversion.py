@@ -624,7 +624,10 @@ def determinelicense_version_copyright(unpackreports, scantempdir, topleveldir, 
 		conn = batcons[0]
 		c = batcursors[0]
 		avgscores[language] = {}
-		avgquery = "select package, avgstrings from %s" % avgstringsdbperlanguagetable[language]
+		if language != 'C':
+			avgquery = "select package, avgstrings from %s" % avgstringsdbperlanguagetable[language]
+		else:
+			avgquery = "select package, avgstrings from %s union select package, avgstrings from %s union select package, avgstrings from %s union select package, avgstrings from %s union select package, avgstrings from %s union select package, avgstrings from %s union select package, avgstrings from %s" % (avgstringsdbperlanguagetable['C'], avgstringsdbperlanguagetable['Python'], avgstringsdbperlanguagetable['C#'], avgstringsdbperlanguagetable['PHP'], avgstringsdbperlanguagetable['Ruby'], avgstringsdbperlanguagetable['JavaScript'], avgstringsdbperlanguagetable['ActionScript'])
 		c.execute(avgquery)
 		res = c.fetchall()
 		conn.commit()
@@ -1773,7 +1776,6 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 	gaincutoff = 1
 
 	kernelquery = "select package FROM linuxkernelfunctionnamecache WHERE functionname=%s LIMIT 1"
-	precomputequery = "select score from scores where stringidentifier=%s LIMIT 1"
 
 	while True:
 	
@@ -1803,6 +1805,13 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 		lines = leafreports['identifier']['strings']
 
 		language = leafreports['identifier']['language']
+		
+		##TODO: Don't hardcode this
+		if language != 'C':
+			precomputequery = "select score from scores_java where stringidentifier=%s LIMIT 1"
+		else:
+			precomputequery = "select score from scores_c where stringidentifier=%s union select score from scores_csharp where stringidentifier=%s union select score from oss.scores_python where stringidentifier=%s union select score from scores_php where stringidentifier=%s union select score from scores_ruby where stringidentifier=%s union select score from scores_javascript where stringidentifier=%s union select score from scores_actionscript where stringidentifier=%s LIMIT 1"
+		
 
 		## this should of course not happen, but hey...
 		scanlines = True
@@ -1891,7 +1900,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 				## sort the lines first, so it is easy to skip duplicates
 				lines.sort()
 
-			stringquery = "select package, filename FROM %s WHERE stringidentifier=" % stringsdbperlanguagetable[language] + "%s"
+			if language != 'C':
+				stringquery = "select package, filename FROM %s WHERE stringidentifier=" % stringsdbperlanguagetable[language] + "%s"
+			else:
+				stringquery = "select package, filename FROM " + stringsdbperlanguagetable['C'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['Python'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['C#'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['PHP'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['Ruby'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['JavaScript'] + " WHERE stringidentifier=%s union select package, filename FROM " + stringsdbperlanguagetable['ActionScript'] + " WHERE stringidentifier=%s"
 
 			for line in lines:
 				#if scandebug:
@@ -1947,7 +1959,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 				## helps reduce load on databases stored on slower disks. Only used if
 				## precomputescore is set and "source order" is False.
 				if precomputescore:
-					cursor.execute(precomputequery, (line,))
+					if language != 'C':
+						cursor.execute(precomputequery, (line,))
+					else:
+						cursor.execute(precomputequery, (line, line, line, line, line, line, line,))
 					scoreres = cursor.fetchone()
 					conn.commit()
 					if scoreres != None:
@@ -1983,8 +1998,12 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 
 				## then see if there is anything in the cache at all
 				try:
-					cursor.execute(stringquery, (line,))
-				except:
+					if language != 'C':
+						cursor.execute(stringquery, (line,))
+					else:
+						cursor.execute(stringquery, (line, line, line, line, line, line, line,))
+				except Exception, e:
+					print e
 					conn.commit()
 					## something weird is going on here, probably
 					## with encodings, so just ignore the line for
@@ -2017,7 +2036,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 							ignored.append(line)
 							linecount[line] = linecount[line] - 1
 							continue
-						cursor.execute(stringquery, (scanline,))
+						if language != 'C':
+							cursor.execute(stringquery, (scanline,))
+						else:
+							cursor.execute(stringquery, (scanline, scanline, scanline, scanline, scanline, scanline, scanline,))
 						res = cursor.fetchall()
 						conn.commit()
 						if len(res) != 0:
@@ -2032,7 +2054,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 									ignored.append(line)
 									linecount[line] = linecount[line] - 1
 									continue
-								cursor.execute(stringquery, (scanline,))
+								if language != 'C':
+									cursor.execute(stringquery, (scanline,))
+								else:
+									cursor.execute(stringquery, (scanline, scanline, scanline, scanline, scanline, scanline, scanline,))
 								res = cursor.fetchall()
 								conn.commit()
 								if len(res) != 0:
@@ -2049,7 +2074,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 								ignored.append(line)
 								linecount[line] = linecount[line] - 1
 								continue
-							cursor.execute(stringquery, (scanline,))
+							if language != 'C':
+								cursor.execute(stringquery, (scanline,))
+							else:
+								cursor.execute(stringquery, (scanline, scanline, scanline, scanline, scanline, scanline, scanline,))
 							res = cursor.fetchall()
 							conn.commit()
 							if len(res) != 0:
@@ -2066,7 +2094,10 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 									ignored.append(line)
 									linecount[line] = linecount[line] - 1
 									continue
-								cursor.execute(stringquery, (scanline,))
+								if language != 'C':
+									cursor.execute(stringquery, (scanline,))
+								else:
+									cursor.execute(stringquery, (scanline, scanline, scanline, scanline, scanline, scanline, scanline,))
 								res = cursor.fetchall()
 								conn.commit()
 								if len(res) != 0:
@@ -2323,7 +2354,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 				if package not in new_whitelist:
 					if (pkg_str[package].issubset(whitelist_str)):
 						toRemove.add(package)
-			#print toRemove
+			print toRemove
 			res[:]=[j for	j in res if j[0] not in toRemove]
 					
 			## clean up stringsLeft first
@@ -2660,7 +2691,7 @@ def licensesetup(scanenv, cursor, conn, debug=False):
 			newenv['BAT_KERNELSYMBOL_SCAN'] = 1
 		if 'linuxkernelfunctionnamecache' in tablenames:
 			newenv['BAT_KERNELFUNCTION_SCAN'] = 1
-	
+
 	if 'renames' in tablenames:
 		newenv['HAVE_CLONE_DB'] = 1
 
