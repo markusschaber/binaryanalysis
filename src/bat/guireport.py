@@ -241,10 +241,20 @@ def guireport(filename, unpackreport, scantempdir, topleveldir, scanenv, cursor,
 						if uniquematcheslen != 0:
 							## don't replace %s/% with os.path.join here, since this is valid in HTML
 							versionhtml = versionhtml + "<h5>%s</h5><p><img src=\"%s\"/></p>\n" % (packagename, "%s/%s-%s-version.png" % (imagesdir, filehash, packagename))
+						
 					## don't replace %s/% with os.path.join here, since this is valid in HTML
 					matchesrows = matchesrows + "</table><td><img src=\"%s\"/></td></tr></table>" % ("%s/%s-piechart.png" % (imagesdir, filehash))
 					if versionhtml != "":
 						matchesrows = matchesrows + "<h2>Versions per package</h2>" + versionhtml
+					matchesrows = matchesrows + '''<h2>Matched whitelistpackages</h2>
+<table>
+  <tr><td>
+    <table>
+      <tr>
+        <td><b>package</b></td>
+		</tr>\n'''
+					for j in stringsres['whitelistmatches']:
+						matchesrows = matchesrows + "    <tr><td>%s</td></tr>\n" % (j)
 
 	distrohtml = ''
 	if leafreports.has_key('file2package'):

@@ -58,6 +58,7 @@ def writejson(scanqueue, topleveldir, outputhash, cursor, conn, scanenv, convert
 			jsonreport['ranking']['stringresults']['scores'] = []
 			jsonreport['ranking']['stringresults']['reports'] = []
 			jsonreport['ranking']['stringresults']['totalstrings'] = 0
+			jsonreport['whitelistmatches'] = []
 			totalunique = 0
 			if stringidentifiers != None:
 				jsonreport['ranking']['stringresults']['totalstrings'] = stringidentifiers['extractedlines']
@@ -162,6 +163,12 @@ def writejson(scanqueue, topleveldir, outputhash, cursor, conn, scanenv, convert
 							packagereport['packagehits'] = packageversions[p]
 							report['packageversions'].append(packagereport)
 						jsonreport['ranking']['stringresults']['reports'].append(report)
+				if 'whitelistmatches' in stringidentifiers:
+					for white in stringidentifiers['whitelistmatches']:
+						report = {}
+						report['packagename'] = white
+						jsonreport['whitelistmatches'].append(report)
+						
 
 			jsonreport['ranking']['stringresults']['totalunique'] = totalunique
 

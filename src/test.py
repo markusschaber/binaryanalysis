@@ -149,8 +149,9 @@ def main(argv):
                     matched_str[result['checksum']][nonunique['packagename']]['nonunique'] = nonunique['nonuniquelines'] 
                     matched_strPerPkg[nonunique['packagename']]['nonunique'].update(nonunique['nonuniquelines'])
             
-            matched_pkgs_niw = matched_pkgs - whitelist
-            matched_pkgs_w= matched_pkgs & whitelist
+            matched_pkgs_niw = matched_pkgs
+            for package in result['data']['whitelistmatches']:
+                matched_pkgs_w.add(package['packagename'])
             
             ### store for all packages which are not in the whitelist the hash of the file in which the package matched###
             if len(matched_pkgs_niw)>0:
@@ -171,9 +172,9 @@ def main(argv):
     
     sscanres=''
     if bnewPkgs:
-        sscanres='Failure'
+        sscanres='Non-Whitelist-Packages matched'
     else:
-        sscanres='Success'
+        sscanres='No Packages or only Whitelist-Packages matched'
         
     bottomLimit_pkg_list = []
     ### sort the packages in descending order of found unique matches, nonunique matches
