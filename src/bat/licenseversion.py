@@ -1778,12 +1778,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 	kernelquery = "select package FROM linuxkernelfunctionnamecache WHERE functionname=%s LIMIT 1"
 
 	while True:
-	
-		new_whitelist = []		
-		for pkgs_white in whitelist:
-			new_whitelist.append(pkgs_white)
-		new_whitelist = set(new_whitelist)
-	
+
 		## get a new task from the queue
 		(filehash, filename) = scanqueue.get(timeout=2592000)
 
@@ -1862,6 +1857,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 			directAssignedString = {}
 			unmatched = []
 			ignored = []
+			whitelistPackagesMatched = set()
 			#unmatchedignorecache = set()
 
 			kernelfuncres = []
@@ -2120,6 +2116,17 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 						else:
 							linecount[line] = 1
 
+				## this filters the query result for whitelisted packages
+				toRemove = set()
+				for result in res:
+					(package, sourcefilename) = result
+					if package in whitelist:
+						if package not in whitelistPackagesMatched:
+							whitelistPackagesMatched.add(package)
+						toRemove.add(result)
+				for result in toRemove:
+					res.remove(result)
+
 				## nothing in the cache
 				if len(res) == 0:
 					unmatched.append(line)
@@ -2327,36 +2334,6 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					## for statistics it's nice to see how many lines were matched
 					matchedlines += 1
 
-			### here we create the sets for the whitelist filter ###
-			### we store a set for each package with the corresponding strings###
-			pkg_str={}
-			whitelist_str=[]
-			for line in lines:
-				if len(res) != 0:	
-					for result in res:
-						(package, sourcefilename) = result
-						if package in pkg_str:
-							pkg_str[package].add(line)
-						else:
-							pkg_str[package]=set(line)
-			
-			### a set with all strings of whitelisted packages is created ###
-			for i in new_whitelist:
-				if i in pkg_str:
-					whitelist_str.extend(pkg_str[i])
-			whitelist_str = set(whitelist_str)
-			
-			### all results are checked if the matched packages which are not an element of "new_whitelist" are a full part of "whitelist_str" ###
-			
-			toRemove = set()
-			for result in res:
-				(package, sourcefilename) = result
-				if package not in new_whitelist:
-					if (pkg_str[package].issubset(whitelist_str)):
-						toRemove.add(package)
-			print toRemove
-			res[:]=[j for	j in res if j[0] not in toRemove]
-					
 			## clean up stringsLeft first
 			for l in stringsLeft.keys():
 				if linecount[stringsLeft[l]['string']] == 0:
@@ -2602,7 +2579,7 @@ def lookup_identifier(scanqueue, reportqueue, cursor, conn, scanenv, topleveldir
 					lenlines = lenlines - len(kernelfuncres)
 				ignored = list(set(ignored))
 				ignored.sort()
-				res = {'matchedlines': matchedlines, 'extractedlines': lenlines, 'reports': reports, 'nonUniqueMatches': nonUniqueMatches, 'nonUniqueAssignments': nonUniqueAssignments, 'unmatched': unmatched, 'scores': scores, 'unmatchedlines': unmatchedlines, 'matchednonassignedlines': matchednonassignedlines, 'matchednotclonelines': matchednotclonelines, 'matcheddirectassignedlines': matcheddirectassignedlines, 'ignored': list(set(ignored))}
+				res = {'matchedlines': matchedlines, 'extractedlines': lenlines, 'reports': reports, 'nonUniqueMatches': nonUniqueMatches, 'nonUniqueAssignments': nonUniqueAssignments, 'unmatched': unmatched, 'scores': scores, 'unmatchedlines': unmatchedlines, 'matchednonassignedlines': matchednonassignedlines, 'matchednotclonelines': matchednotclonelines, 'matcheddirectassignedlines': matcheddirectassignedlines, 'ignored': list(set(ignored)), 'whitelistmatches': list(whitelistPackagesMatched)}
 		else:
 			res = None
 
