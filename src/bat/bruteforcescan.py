@@ -962,7 +962,7 @@ def aggregatescan(unpackreports, aggregatescans, processors, scantempdir, toplev
 	return statistics
 	
 ## continuously grab tasks (files) from a queue and process	
-def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn, debug, timeout):
+def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn, debug, timeout, whitelist):
 	
 	## import all methods defined in the scans
 	blacklistscans = set()
@@ -994,7 +994,10 @@ def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn,
 		for postrunscan in postrunscans:
 			module = postrunscan['module']
 			method = postrunscan['method']
+			postrunscan['environment']['whitelist'] = whitelist
+
 			res = eval("bat_%s(filetoscan, unpackreports, scantempdir, topleveldir, postrunscan['environment'], cursor, conn, debug=debug)" % (method))
+
 			## TODO: find out what to do with this
 			if res != None:
 				pass
@@ -2392,7 +2395,7 @@ def runscan(scans, binaries, batversion):
 					else:
 						cursor = None
 						conn = None
-					p = multiprocessing.Process(target=postrunscan, args=(scanqueue, scans['postrunscans'], topleveldir, scantempdir, cursor, conn, tmpdebug, timeout))
+					p = multiprocessing.Process(target=postrunscan, args=(scanqueue, scans['postrunscans'], topleveldir, scantempdir, cursor, conn, tmpdebug, timeout, whitelist))
 					processpool.append(p)
 					p.start()
 

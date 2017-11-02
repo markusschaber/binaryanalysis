@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, json, sys
+import os, os.path, json, sys
 import tarfile
 from glob import glob
 from optparse import OptionParser
@@ -11,73 +11,20 @@ import gzip
 
 ### unpack the tar.gz archives which are in the outputdir ###
 def unpack_results(rootpath):
-    #tar_files=glob(rootpath+'*.tar.gz')
     tar_files=[]
     for root, subFolders, files in os.walk(rootpath):
         for file in files:
             tar_files.append(os.path.join(root,file))
-    folders=[]
-    for archive in tar_files:
-        base = os.path.basename(archive)
-        unpackdir = os.path.splitext(os.path.splitext(base)[0])[0]
-        tar = tarfile.open(archive)
-        folder=os.path.join(os.path.dirname(archive), unpackdir)
-        folders.append(folder)
-        tar.extractall(path=folder)
-        tar.close()
-    return folders
-### the rootdir of the scan-output###
+    return tar_files
 
-def main(argv):
-    config = ConfigParser.ConfigParser()
-    parser = OptionParser()
-    parser.add_option("-b", "--binary", action="store", dest="fw", help="path to binary file", metavar="FILE")
-    parser.add_option("-c", "--config", action="store", dest="cfg", help="path to configuration file", metavar="FILE")
-    parser.add_option("-o", "--outputfile", action="store", dest="outputfile", help="path to output file", metavar="FILE")
-    parser.add_option("-d", "--directory", action="store", dest="fwdir", help="path to directory with files to be scanned", metavar="DIR")
-    parser.add_option("-u", "--outputdir", action="store", dest="outdir", help="path to directory to write results to", metavar="DIR")
-    parser.add_option("-v", "--version", action="store_true", dest="version", help="print version of BAT", metavar="VERSION")
-    parser.add_option("-l", "--blacklist", action="store", dest="blacklist", help="path to blacklist file", metavar="FILE")
-    parser.add_option("-f", "--fileblacklist", action="store", dest="fileblacklist", help="path to file-blacklist file", metavar="FILE")
-    parser.add_option("-w", "--whitelist", action="store", dest="whitelist", help="path to whitelist file", metavar="FILE")
-    parser.add_option("-r", "--result", action="store", dest="respath", help="path to result-file", metavar="DIR")
-    
-    (options, args) = parser.parse_args()
-    
-    ### remove from argv what bat doesn't want to know
-    if '-r' in argv[1:]:
-        del argv[argv.index('-r')+1]
-        del argv[argv.index('-r')]
-        
-    if '-f' in argv[1:]:
-        del argv[argv.index('-f')+1]
-        del argv[argv.index('-f')]
-        
-    if '--fileblacklist' in argv[1:]:
-        del argv[argv.index('--fileblacklist')+1]
-        del argv[argv.index('--fileblacklist')]
-
+def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, cursor, conn, debug=False):
     ### indicates if there was any match to a new Package not in whitelist ###
     bnewPkgs = False
-    ### read the packages from the whitelist.json ###
-    whitelist_file = open(options.whitelist, 'r')
-    whitelist = []
-    whitelist_json = json.load(whitelist_file)["whitelist"]
-    for entry in whitelist_json:
-        whitelist.append(entry['package'])
-    whitelist=set(whitelist)
+
+    whitelist = set(scanenv['whitelist'])
+    outdir = scanenv['outdir']
     
-    ### file-blacklist ###
-    fblacklist_file = open(options.fileblacklist, 'r')
-    fblacklist = []
-    fblacklist_json = json.load(fblacklist_file)["blacklist"]
-    for entry in fblacklist_json:
-        fblacklist.append(entry['filename'])
-    fblacklist=set(fblacklist)
-    
-    returncode=subprocess.call(['/home/mschnelzer/share/merge/bat-scan']+ argv[1:])
-    
-    rootdir = options.outdir
+    rootdir = os.path.join((str)(topleveldir),'reports')
     folders = unpack_results(rootdir)
     scandata = {}
     report = []
@@ -92,35 +39,36 @@ def main(argv):
     matched_pkgs_niw = set()
     
     ### read all scandata.json to create a matching-dict from hash-value to filename and path inside the extracted scanresult ####
-    for folder in folders:
-        files=glob(folder+'/*.json')
-        for filepath in files:
+
+    files=glob(topleveldir+'/*.json')
+    for filepath in files:
+        try:
             data_file = open(filepath)
             data = json.load(data_file)
             for e in data:
                 if 'checksum' in e:
-                    entry = {'name': e['name'], 'realpath':os.path.join(folder,'data') }
+                    entry = {'name': e['name'], 'realpath':os.path.join(topleveldir,filepath) }#os.path.join(topleveldir,'data') }
                     scandata[e['checksum']]=entry
+        except:
+            print "scandata.json not readable, no html overview generated."
+            continue
                 
     ### read all json files containing the file-reports to a list ###
     for folder in folders:
-        path=os.path.join(folder, "reports")
-        if os.path.isdir(path):
-            files=glob(path+'/*.json.gz')
-            for filepath in files:
-                data_file = gzip.open(filepath, 'rb')
-                #data_file = open(filepath)
-                data = json.load(data_file)
-                entry = {'checksum':os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])[0], 'data':data}
-                report.append(entry)
+        data_file = gzip.open(folder, 'rb')
+        try:
+            data = json.load(data_file)
+            entry = {'checksum':os.path.splitext(os.path.splitext(os.path.basename(folder))[0])[0], 'data':data}
+            report.append(entry)
+        except:
+            continue
     
     ### prepare data needed for the report### 
     for result in report:
-        if scandata[result['checksum']]['name'] in fblacklist:
-            continue
+        # if scandata[result['checksum']]['name'] in fblacklist:
+            # continue
         
         matched_pkgs=set()
-        
 
         
         if 'data' in result and 'ranking' in result['data'] and 'stringresults' in result['data']['ranking'] and 'reports' in result['data']['ranking']['stringresults']:
@@ -216,7 +164,7 @@ def main(argv):
         html+='<tr><td><li>%s</li></td><td>%s</td><td>%s</td></tr>' % (link,i[1],i[2])
     if len(sorted_pkg_list)>0:
         html+='</table></br>Detailed scanresults:</br>'
-    
+
     for i in sorted_pkg_list:
         html+='''</br>
                 <table id="%s" style="border-style:solid">
@@ -230,6 +178,7 @@ def main(argv):
                     <tr>
                         <th colspan="2">Found in following files</th>
                     </tr>'''% (i[0], i[0])
+
         for j in packages_niw[i[0]]:
             html+=''' <tr>
                         <td>Filename</td>
@@ -245,14 +194,15 @@ def main(argv):
                       <tr>
                         <td style="border:none; padding:0px;" colspan="2"><hr></td>
                       </tr>
-                      ''' % (scandata[j]['name'], os.path.relpath(scandata[j]['realpath'],options.respath), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),options.respath), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),options.respath))
+                      ''' % (scandata[j]['name'], os.path.relpath(scandata[j]['realpath'],outdir), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),outdir), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),outdir))
+
         html+='''<tr>
                      <td style="background-color:#c0c0c0; padding:2px;" colspan="2"></td>
                  </tr>
                  <tr>
                      <th colspan="2">Matches</th>
                  </tr>'''
-        
+
         html+='''<tr>
         <td colspan="2">Unique:(%s)</br><ul>''' % len(matched_strPerPkg[i[0]]['unique'])
         
@@ -271,7 +221,7 @@ def main(argv):
     ### end generate html output ### 
     
     ### write the html-file to the desired output dir ###
-    outputdata=open(os.path.join((str)(options.respath),'output.html'), 'w')
+    outputdata=open(os.path.join((str)(topleveldir),'overview.html'), 'w')
     outputdata.write(html)
     outputdata.flush()
     outputdata.close()
@@ -296,16 +246,9 @@ def main(argv):
     json_out['skipped']= [pkg for pkg in bottomLimit_pkg_list]
     
     ### write the json-file to the desired output dir ###
-    outputdata=open(os.path.join((str)(options.respath),'output.json'), 'w')
+    outputdata=open(os.path.join((str)(topleveldir),'overview.json'), 'w')
     outputdata.write(json.dumps(json_out,sort_keys=True,indent=4,separators=(',',':')))
     outputdata.flush()
     outputdata.close()
-    
-    if bnewPkgs:
-        sys.exit(1)
-    else:
-        sys.exit(0)
-        
-if __name__ == "__main__":
-        main(sys.argv)
+
     
