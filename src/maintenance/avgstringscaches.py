@@ -62,55 +62,76 @@ def main(argv):
 	try:
 		query = "DELETE FROM avgstringscache_actionscript"
 		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_actionscript successfull."
+		query = "INSERT INTO avgstringscache_actionscript SELECT package, AVG(score) FROM scores_actionscript, stringscache_actionscript WHERE scores_actionscript.stringidentifier = stringscache_actionscript.stringidentifier GROUP BY package"
+		c.execute(query)
+		conn.commit()
+		print "Insert in avgstringscache_actionscript successfull."
+		
 		query = "DELETE FROM avgstringscache_c"
 		c.execute(query)
-		query = "DELETE FROM avgstringscache_csharp"
-		c.execute(query)
-		query = "DELETE FROM avgstringscache_java"
-		c.execute(query)
-		query = "DELETE FROM avgstringscache_javascript"
-		c.execute(query)
-		query = "DELETE FROM avgstringscache_php"
-		c.execute(query)
-		query = "DELETE FROM avgstringscache_python"
-		c.execute(query)
-		query = "DELETE FROM avgstringscache_ruby"
-		c.execute(query)
-		print "Clearing successfull."
 		conn.commit()
-		
+		print "Clearing of avgstringscache_c successfull."
 		query = "INSERT INTO avgstringscache_c SELECT package, AVG(score) FROM scores_c, stringscache_c WHERE scores_c.stringidentifier = stringscache_c.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_c successfull."
+		
+		query = "DELETE FROM avgstringscache_csharp"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_csharp successfull."
 		query = "INSERT INTO avgstringscache_csharp SELECT package, AVG(score) FROM scores_csharp, stringscache_csharp WHERE scores_csharp.stringidentifier = stringscache_csharp.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_csharp successfull."
+		
+		query = "DELETE FROM avgstringscache_java"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_java successfull."
 		query = "INSERT INTO avgstringscache_java SELECT package, AVG(score) FROM scores_java, stringscache_java WHERE scores_java.stringidentifier = stringscache_java.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_java successfull."
+		
+		query = "DELETE FROM avgstringscache_javascript"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_javascript successfull."
 		query = "INSERT INTO avgstringscache_javascript SELECT package, AVG(score) FROM scores_javascript, stringscache_javascript WHERE scores_javascript.stringidentifier = stringscache_javascript.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_javascript successfull."
+		
+		query = "DELETE FROM avgstringscache_php"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_php successfull."
 		query = "INSERT INTO avgstringscache_php SELECT package, AVG(score) FROM scores_php, stringscache_php WHERE scores_php.stringidentifier = stringscache_php.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_php successfull."
+		
+		query = "DELETE FROM avgstringscache_python"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_python successfull."
 		query = "INSERT INTO avgstringscache_python SELECT package, AVG(score) FROM scores_python, stringscache_python WHERE scores_python.stringidentifier = stringscache_python.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_python successfull."
+		
+		query = "DELETE FROM avgstringscache_ruby"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of avgstringscache_ruby successfull."
 		query = "INSERT INTO avgstringscache_ruby SELECT package, AVG(score) FROM scores_ruby, stringscache_ruby WHERE scores_ruby.stringidentifier = stringscache_ruby.stringidentifier GROUP BY package"
 		c.execute(query)
 		conn.commit()
 		print "Insert in avgstringscache_ruby successfull."
-		query = "INSERT INTO avgstringscache_actionscript SELECT package, AVG(score) FROM scores_actionscript, stringscache_actionscript WHERE scores_actionscript.stringidentifier = stringscache_actionscript.stringidentifier GROUP BY package"
-		c.execute(query)
-		print "Insert in avgstringscache_actionscript successfull."
-		conn.commit()
+		
 	except Exception, e:
 		print e;
 		print >>sys.stderr, "Database update failed"

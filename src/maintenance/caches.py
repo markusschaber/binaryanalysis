@@ -63,93 +63,125 @@ def main(argv):
 	try:
 		query = "DELETE FROM stringscache_actionscript"
 		c.execute(query)
-		query = "DELETE FROM stringscache_c"
-		c.execute(query)
-		query = "DELETE FROM stringscache_csharp"
-		c.execute(query)
-		query = "DELETE FROM stringscache_java"
-		c.execute(query)
-		query = "DELETE FROM stringscache_javascript"
-		c.execute(query)
-		query = "DELETE FROM stringscache_php"
-		c.execute(query)
-		query = "DELETE FROM stringscache_python"
-		c.execute(query)
-		query = "DELETE FROM stringscache_ruby"
-		c.execute(query)
-		
-		query = "DELETE FROM fieldcache_java"
-		c.execute(query)
-		
-		query = "DELETE FROM classcache_java"
-		c.execute(query)
-		
-		query = "DELETE FROM varnamecache_c"
-		c.execute(query)
-		
-		query = "DELETE FROM functionnamecache_c"
-		c.execute(query)
-		query = "DELETE FROM functionnamecache_java"
-		c.execute(query)
-		print "Clearing successfull"
 		conn.commit()
-		
-		query = "INSERT INTO stringscache_java SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Java';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_java successfull"
-		query = "INSERT INTO stringscache_c SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'C';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_c successfull"
-		query = "INSERT INTO stringscache_javascript SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'JavaScript';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_javascript successfull"
-		query = "INSERT INTO stringscache_csharp SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'C#';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_csharp successfull"
-		query = "INSERT INTO stringscache_php SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'PHP';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_php successfull"
-		query = "INSERT INTO stringscache_python SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Python';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_python successfull"
-		query = "INSERT INTO stringscache_ruby SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Ruby';"
-		c.execute(query)
-		conn.commit()
-		print "Insert in stringscache_ruby successfull"
+		print "Clearing of stringscache_actionscript successfull"
 		query = "INSERT INTO stringscache_actionscript SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'ActionScript';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in stringscache_actionscript successfull"
 		
+		query = "DELETE FROM stringscache_c"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_c successfull"
+		query = "INSERT INTO stringscache_c SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'C';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_c successfull"
+		
+		query = "DELETE FROM stringscache_csharp"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_csharp successfull"
+		query = "INSERT INTO stringscache_csharp SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'C#';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_csharp successfull"
+		
+		query = "DELETE FROM stringscache_java"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_java successfull"
+		query = "INSERT INTO stringscache_java SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Java';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_java successfull"
+		
+		query = "DELETE FROM stringscache_javascript"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_javascript successfull"
+		query = "INSERT INTO stringscache_javascript SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'JavaScript';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_javascript successfull"
+		
+		query = "DELETE FROM stringscache_php"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_php successfull"
+		query = "INSERT INTO stringscache_php SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'PHP';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_php successfull"
+		
+		query = "DELETE FROM stringscache_python"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_python successfull"
+		query = "INSERT INTO stringscache_python SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Python';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_python successfull"
+		
+		query = "DELETE FROM stringscache_ruby"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of stringscache_ruby successfull"
+		query = "INSERT INTO stringscache_ruby SELECT DISTINCT stringidentifier, package, filename FROM extracted_string, processed_file WHERE extracted_string.checksum = processed_file.checksum AND language = 'Ruby';"
+		c.execute(query)
+		conn.commit()
+		print "Insert in stringscache_ruby successfull"
+		
+		
+		query = "DELETE FROM fieldcache_java"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of fieldcache_java successfull"
 		query = "INSERT INTO fieldcache_java SELECT DISTINCT name, package FROM extracted_name, processed_file WHERE extracted_name.type = 'field' AND extracted_name.checksum = processed_file.checksum AND extracted_name.language = 'Java';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in fieldcache_java successfull"
 		
+		
+		query = "DELETE FROM classcache_java"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of classcache_java successfull"
 		query = "INSERT INTO classcache_java SELECT DISTINCT name, package FROM extracted_name, processed_file WHERE extracted_name.type = 'class' AND extracted_name.checksum = processed_file.checksum AND extracted_name.language = 'Java';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in classcache_java successfull"
 		
+		
+		query = "DELETE FROM varnamecache_c"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of varnamecache_c successfull"
 		query = "INSERT INTO varnamecache_c SELECT DISTINCT name, package FROM extracted_name, processed_file WHERE extracted_name.type = 'variable' AND extracted_name.checksum = processed_file.checksum AND extracted_name.language = 'C';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in varnamecache_c successfull"
 		
+		
+		query = "DELETE FROM functionnamecache_c"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of functionnamecache_c successfull"
 		query = "INSERT INTO functionnamecache_c SELECT DISTINCT functionname, package FROM extracted_function, processed_file WHERE extracted_function.checksum = processed_file.checksum AND extracted_function.language = 'C';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in functionnamecache_c successfull"
+		
+		query = "DELETE FROM functionnamecache_java"
+		c.execute(query)
+		conn.commit()
+		print "Clearing of functionnamecache_java successfull"
 		query = "INSERT INTO functionnamecache_java SELECT DISTINCT functionname, package FROM extracted_function, processed_file WHERE extracted_function.checksum = processed_file.checksum AND extracted_function.language = 'Java';"
 		c.execute(query)
 		conn.commit()
 		print "Insert in functionnamecache_java successfull"
+		
 	except Exception, e:
 		print e
 		print >>sys.stderr, "Database update failed"
