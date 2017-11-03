@@ -47,7 +47,7 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
             data = json.load(data_file)
             for e in data:
                 if 'checksum' in e:
-                    entry = {'name': e['name'], 'realpath':os.path.join(topleveldir,filepath) }#os.path.join(topleveldir,'data') }
+                    entry = {'name': e['name'], 'realpath': e['realpath'] }
                     scandata[e['checksum']]=entry
         except:
             print "scandata.json not readable, no html overview generated."
@@ -65,8 +65,6 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
     
     ### prepare data needed for the report### 
     for result in report:
-        # if scandata[result['checksum']]['name'] in fblacklist:
-            # continue
         
         matched_pkgs=set()
 
@@ -189,12 +187,7 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
                         <td>%s</td>
                       </tr>
                       <tr>
-                        <td>More informations</td>
-                        <td><a href="%s">%s</a></td>
-                      <tr>
-                        <td style="border:none; padding:0px;" colspan="2"><hr></td>
-                      </tr>
-                      ''' % (scandata[j]['name'], os.path.relpath(scandata[j]['realpath'],outdir), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),outdir), os.path.relpath(os.path.join(os.path.split(scandata[j]['realpath'])[0],'reports',j+'.json'),outdir))
+                      ''' % (scandata[j]['name'], os.path.relpath(scandata[j]['realpath'],outdir))
 
         html+='''<tr>
                      <td style="background-color:#c0c0c0; padding:2px;" colspan="2"></td>
