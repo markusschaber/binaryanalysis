@@ -1761,8 +1761,11 @@ def writeDumpfile(unpackreports, scans, processamount, outputfile, configfile, t
 	## By default pack all the JSON files in the current directory
 	dirfiles = os.listdir('.')
 	jsonfiles = filter(lambda x: x.endswith('.json'), dirfiles)
+	htmlfiles = filter(lambda x: x.endswith('.html'), dirfiles)
 	for j in jsonfiles:
 		dumpfile.add(j)
+	for h in htmlfiles:
+		dumpfile.add(h)
 		
 	if scans['batconfig']['extrapack'] != []:
 		for e in scans['batconfig']['extrapack']:

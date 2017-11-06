@@ -147,7 +147,7 @@ def main(argv):
 	scans['batconfig']['environment']['blacklist']=blacklist
 	
 	for postrunscan in scans['postrunscans']:
-		if postrunscan['module'] == 'test':
+		if postrunscan['module'] == 'bat.generateOverview':
 			postrunscan['environment']['outdir'] = options.outdir
 	
 	scanfiles = []
