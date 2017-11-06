@@ -1617,6 +1617,7 @@ def readconfig(config, configfilename):
 	prerunscans = sorted(prerunscans, key=lambda x: x['priority'], reverse=True)
 	leafscans = sorted(leafscans, key=lambda x: x['priority'], reverse=True)
 	aggregatescans = sorted(aggregatescans, key=lambda x: x['priority'], reverse=True)
+	postrunscans = sorted(postrunscans, key=lambda x: x['priority'], reverse=True)
 	
 	return {'batconfig': batconf, 'unpackscans': unpackscans, 'leafscans': leafscans, 'prerunscans': prerunscans, 'postrunscans': postrunscans, 'aggregatescans': aggregatescans, 'errors': errors}
 
@@ -2387,6 +2388,9 @@ def runscan(scans, binaries, batversion):
 					else:
 						if 'postrun' in debugphases:
 							parallel = False
+				for prunscan in scans['postrunscans']:
+					if prunscan['name'] == 'overview':
+						parallel = False
 				if not parallel:
 					postrunprocessamount = 1
 				else:

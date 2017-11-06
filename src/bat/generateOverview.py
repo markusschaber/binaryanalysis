@@ -55,13 +55,17 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
                 
     ### read all json files containing the file-reports to a list ###
     for folder in folders:
-        data_file = gzip.open(folder, 'rb')
         try:
-            data = json.load(data_file)
-            entry = {'checksum':os.path.splitext(os.path.splitext(os.path.basename(folder))[0])[0], 'data':data}
-            report.append(entry)
+            data_file = gzip.open(folder, 'rb')
+            try:
+                data = json.load(data_file)
+                entry = {'checksum':os.path.splitext(os.path.splitext(os.path.basename(folder))[0])[0], 'data':data}
+                report.append(entry)
+            except:
+                continue
         except:
-            continue
+            print "No guireports created. Overview wont be generated."
+            break
     
     ### prepare data needed for the report### 
     for result in report:
