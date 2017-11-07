@@ -253,8 +253,9 @@ def guireport(filename, unpackreport, scantempdir, topleveldir, scanenv, cursor,
       <tr>
         <td><b>package</b></td>
 		</tr>\n'''
-					for j in stringsres['whitelistmatches']:
-						matchesrows = matchesrows + "    <tr><td>%s</td></tr>\n" % (j)
+					if not stringres == None:
+						for j in stringsres['whitelistmatches']:
+							matchesrows = matchesrows + "    <tr><td>%s</td></tr>\n" % (j)
 
 	distrohtml = ''
 	if leafreports.has_key('file2package'):
