@@ -253,7 +253,7 @@ def guireport(filename, unpackreport, scantempdir, topleveldir, scanenv, cursor,
       <tr>
         <td><b>package</b></td>
 		</tr>\n'''
-					if not stringres == None:
+					if not stringsres == None:
 						for j in stringsres['whitelistmatches']:
 							matchesrows = matchesrows + "    <tr><td>%s</td></tr>\n" % (j)
 
