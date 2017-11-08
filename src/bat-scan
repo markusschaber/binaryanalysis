@@ -148,7 +148,10 @@ def main(argv):
 	
 	for postrunscan in scans['postrunscans']:
 		if postrunscan['module'] == 'bat.generateOverview':
-			postrunscan['environment']['outdir'] = options.outdir
+			if options.outdir != None:
+				postrunscan['environment']['outdir'] = options.outdir
+			if options.outputfile != None:
+				postrunscan['environment']['outdir'] = options.outputfile
 	
 	scanfiles = []
 	if options.fw != None:
