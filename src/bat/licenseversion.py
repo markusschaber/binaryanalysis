@@ -205,7 +205,7 @@ def aggregatejars(unpackreports, scantempdir, topleveldir, pool, scanenv, cleanc
 	for i in jarfiles:
 		classfiles = filter(lambda x: x.endswith('.class'), unpackreports[i]['scans'][0]['scanreports'])
 		classreports = map(lambda x: unpackreports[x], classfiles)
-		jartasks.append((i, unpackreports[i], classreports, topleveldir))
+		jartasks.append((i, unpackreports[i], classreports, topleveldir, scanenv['whitelist']))
 
 	ranked = set()
 	if jartasks != []:
@@ -247,7 +247,7 @@ def aggregatejars(unpackreports, scantempdir, topleveldir, pool, scanenv, cleanc
 	return ranked
 
 ## aggregate results for a single JAR file
-def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
+def aggregate((jarfile, jarreport, unpackreports, topleveldir, whitelist)):
 	rankres = {}
 	matchedlines = 0
 	matchednonassignedlines = 0
@@ -269,6 +269,7 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
 	fieldmatches = {}
 	classmatches = {}
 	sourcematches = {}
+	whitelistPackagesMatched = set()
 
 	## from dynamicres
 	totalnames = 0
@@ -302,6 +303,10 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
 		if not 'binary' in leafreports['tags']:
 			continue
 		(stringmatches, dynamicres, varfunmatches, language) = leafreports['ranking']
+		if stringmatches != None:
+			for whitelistmatch in stringmatches['whitelistmatches']:
+				if not whitelistmatch in whitelistPackagesMatched:
+					whitelistPackagesMatched.add(whitelistmatch)
 		if language != 'Java':
 			continue
 		if 'fields' in varfunmatches:
@@ -357,6 +362,12 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
 						scoresperpkg[s] = stringmatches['scores'][s]
 			if stringmatches['reports'] != []:
 				for r in stringmatches['reports']:
+					# this filters for whitelisted packages
+					if r['package'] in whitelist:
+						if r['package'] not in whitelistPackagesMatched:
+							whitelistPackagesMatched.add(package)
+						stringmatches['reports'].remove(r['package'])
+						continue
 					rank = r['rank']
 					package = r['package']
 					unique = r['unique']
@@ -404,6 +415,7 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
 							dynamicresfinal['uniquepackages'][d] = list(set(dynamicresfinal['uniquepackages'][d] + dynamicres['uniquepackages'][d]))
 						else:
 							dynamicresfinal['uniquepackages'][d] = dynamicres['uniquepackages'][d]
+	
 	if not aggregated:
 		return (jarfile, aggregated)
 
@@ -441,6 +453,7 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir)):
 	rankres['nonUniqueAssignments'] = nonUniqueAssignments
 	rankres['nonUniqueMatches'] = nonUniqueMatches
 	rankres['reports'] = reports
+	rankres['whitelistmatches'] = whitelistPackagesMatched
 
 	## now write the new result
 	## TODO: only do this if there actually is an aggregate result
