@@ -21,3 +21,16 @@ increases the amount of packages that can be found by BAT.
 
 There are examples for black- and whitelists in:
 https://github.com/markusschaber/binaryanalysis/tree/master/src
+
+New scripts in maintenance
+--------------------------
+
+For maintaining and expanding the database two scripts were added
+to the project. Those scripts, caches.py and avgstringscaches.py,
+will update the database caches, e.g. stringscache_c. To run
+properly, those scripts need to be run in this order:
+caches.py, scorecache.py, avgstringscaches.py
+The script scorecache.py is from the original project, but it was
+alterd to fill the scores of all languages in one run, instead of
+working only on one language per run. With those scripts it is easy
+to update the caches of the database after the scanning of new packages.
