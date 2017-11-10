@@ -1,0 +1,23 @@
+New options for bat-scan
+------------------------
+
+There were two new options added to bat-scan. The -l option is for
+passing the path of the blacklist-file to bat-scan. From this file
+the scan will read the stringidentifiers, which will be ignored in
+the result of bat-scan. The second new option is -w, this option  
+allows the user to pass the path to the whitelist to the bat-scan.
+From the whitelist-file, bat-scan will read the packages which are
+ignored in the scan. The third addition to bat-scan is the postrun-
+scan generate overview, this scan will read the json-reports of bat
+and generate a json-file which contains all packages matched in the
+scan. It also creates a html file whit the same information. Enabl-
+ing this scan will cause the postrunscans to run sequencially, the
+reason for this is, the requirement of generating the json-reports
+before generating the overview. Another change to the scan was made
+in the querying of the database, instead of querying only the java
+and c stringscaches the scan will now query all caches. This results
+in a loss of performance and increases the running time, but it also
+increases the amount of packages that can be found by BAT.
+
+There are examples for black- and whitelists in:
+https://github.com/markusschaber/binaryanalysis/tree/master/src
