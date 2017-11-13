@@ -5495,7 +5495,7 @@ def searchUnpackLZMA(filename, tempdir=None, blacklist=[], offsets={}, scanenv={
 
 		if not lzma_try_all:
 			## quite a few LZMA streams have '\x00' at byte 14, but not all
-			if not lzmadata[14] == '\x00' and lzma_extra_strict:
+			if not lzmadata[13] == '\x00' and lzma_extra_strict:
 				lzmafile.close()
 				continue
 
