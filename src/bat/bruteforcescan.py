@@ -863,33 +863,30 @@ def scan(scanqueue, reportqueue, scans, leafscans, prerunscans, prerunignore, pr
 			reports['tags'] = list(set(tags))
 			
 			## need to filter here (blacklist)
-			##
-
-			blacklist_2_set = set(blacklist_2)
 			
 			if ('identifier' in reports):
 				if (reports['identifier']['language'] == 'C'):
 					before = set(reports['identifier']['kernelsymbols'])
-					reports['identifier']['kernelsymbols'][:] = [items for items in reports['identifier']['kernelsymbols'] if items not in blacklist_2_set]
+					reports['identifier']['kernelsymbols'][:] = [items for items in reports['identifier']['kernelsymbols'] if items not in blacklist_2]
 					reports['identifier']['blacklisted']=list(set(before)-set(reports['identifier']['kernelsymbols']))
 					before = set(reports['identifier']['strings'])
-					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2_set]
+					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2]
 					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['strings']))
 					before = reports['identifier']['functionnames']
-					reports['identifier']['functionnames']=reports['identifier']['functionnames']-blacklist_2_set
+					reports['identifier']['functionnames']=reports['identifier']['functionnames']-blacklist_2
 					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['functionnames']))
 					before = reports['identifier']['variablenames']
-					reports['identifier']['variablenames']=reports['identifier']['variablenames']-blacklist_2_set
+					reports['identifier']['variablenames']=reports['identifier']['variablenames']-blacklist_2
 					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['variablenames']))
 				elif (reports['identifier']['language'] == 'Java'):
 					before = set(reports['identifier']['strings'])
-					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2_set]
+					reports['identifier']['strings'][:] = [items for items in reports['identifier']['strings'] if items not in blacklist_2]
 					reports['identifier']['blacklisted']=list(set(before)-set(reports['identifier']['strings']))
 					before = set(reports['identifier']['methods'])
-					reports['identifier']['methods'][:] = [items for items in reports['identifier']['methods'] if items not in blacklist_2_set]
+					reports['identifier']['methods'][:] = [items for items in reports['identifier']['methods'] if items not in blacklist_2]
 					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['methods']))
 					before = set(reports['identifier']['fields'])
-					reports['identifier']['fields'][:] = [items for items in reports['identifier']['fields'] if items not in blacklist_2_set]
+					reports['identifier']['fields'][:] = [items for items in reports['identifier']['fields'] if items not in blacklist_2]
 					reports['identifier']['blacklisted']+=list(set(before)-set(reports['identifier']['fields']))
 			unpackreports['tags'] = list(set(unpackreports['tags'] + reports['tags']))
 

@@ -303,7 +303,7 @@ def aggregate((jarfile, jarreport, unpackreports, topleveldir, whitelist)):
 		if not 'binary' in leafreports['tags']:
 			continue
 		(stringmatches, dynamicres, varfunmatches, language) = leafreports['ranking']
-		if stringmatches != None:
+		if stringmatches:
 			for whitelistmatch in stringmatches['whitelistmatches']:
 				if not whitelistmatch in whitelistPackagesMatched:
 					whitelistPackagesMatched.add(whitelistmatch)

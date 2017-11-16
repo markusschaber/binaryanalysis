@@ -22,7 +22,7 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
     ### indicates if there was any match to a new Package not in whitelist ###
     bnewPkgs = False
 
-    whitelist = set(scanenv['whitelist'])
+    whitelist = scanenv['whitelist']
     outdir = scanenv['outdir']
     
     rootdir = os.path.join((str)(topleveldir),'reports')

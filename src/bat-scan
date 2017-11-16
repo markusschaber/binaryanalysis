@@ -20,7 +20,7 @@ import json
 def main(argv):
 	batversion = 37
 	config = ConfigParser.ConfigParser()
-        parser = OptionParser()
+	parser = OptionParser()
 	parser.add_option("-b", "--binary", action="store", dest="fw", help="path to binary file", metavar="FILE")
 	parser.add_option("-c", "--config", action="store", dest="cfg", help="path to configuration file", metavar="FILE")
 	parser.add_option("-o", "--outputfile", action="store", dest="outputfile", help="path to output file", metavar="FILE")
@@ -44,21 +44,18 @@ def main(argv):
 
 	if options.blacklist != None:
 		try:
-        		blacklist_file = open(options.blacklist, 'r')
-        		blacklist = []
-        		blacklist_json = json.load(blacklist_file)["blacklist"]
-        		for entry in blacklist_json:
-        			blacklist.append(entry['identifier'])
+			blacklist_file = open(options.blacklist, 'r')
+			blacklist_json = json.load(blacklist_file)["blacklist"]
+			blacklist = {entry['identifier'] for entry in blacklist_json}
+				
 		except:
 			parser.error("Path to blacklist not correct, or corrupted file")
 	
 	if options.whitelist != None:
 		try:
         		whitelist_file = open(options.whitelist, 'r')
-        		whitelist = []
         		whitelist_json = json.load(whitelist_file)["whitelist"]
-        		for entry in whitelist_json:
-        			whitelist.append(entry['package'])
+        		whitelist = {entry['package'] for entry in whitelist_json}
         		
 		except:
 			parser.error("Path to whitelist not correct, or corrupted file")
