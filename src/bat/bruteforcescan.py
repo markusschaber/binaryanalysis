@@ -992,15 +992,16 @@ def postrunscan(scanqueue, postrunscans, topleveldir, scantempdir, cursor, conn,
 			scanqueue.task_done()
 			continue
 		for postrunscan in postrunscans:
-			module = postrunscan['module']
-			method = postrunscan['method']
-			postrunscan['environment']['whitelist'] = whitelist
-
-			res = eval("bat_%s(filetoscan, unpackreports, scantempdir, topleveldir, postrunscan['environment'], cursor, conn, debug=debug)" % (method))
-
-			## TODO: find out what to do with this
-			if res != None:
-				pass
+			if postrunscan['priority'] >= 2 or scanqueue.empty():
+				module = postrunscan['module']
+				method = postrunscan['method']
+				postrunscan['environment']['whitelist'] = whitelist
+				
+				res = eval("bat_%s(filetoscan, unpackreports, scantempdir, topleveldir, postrunscan['environment'], cursor, conn, debug=debug)" % (method))
+				
+				## TODO: find out what to do with this
+				if res != None:
+					pass
 		scanqueue.task_done()
 
 ## process a single configuration section
@@ -1759,7 +1760,7 @@ def writeDumpfile(unpackreports, scans, processamount, outputfile, configfile, t
 			shutil.copy(configfile, '.')
 		dumpfile.add(os.path.basename(configfile))
 		
-	## By default pack all the JSON files in the current directory
+	## By default pack all the JSON and html files in the current directory
 	dirfiles = os.listdir('.')
 	jsonfiles = filter(lambda x: x.endswith('.json'), dirfiles)
 	htmlfiles = filter(lambda x: x.endswith('.html'), dirfiles)
@@ -2388,9 +2389,6 @@ def runscan(scans, binaries, batversion):
 					else:
 						if 'postrun' in debugphases:
 							parallel = False
-				for prunscan in scans['postrunscans']:
-					if prunscan['name'] == 'overview':
-						parallel = False
 				if not parallel:
 					postrunprocessamount = 1
 				else:

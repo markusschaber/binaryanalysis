@@ -5,6 +5,7 @@ import tarfile
 from glob import glob
 from optparse import OptionParser
 from operator import itemgetter
+from codecs import open
 import ConfigParser
 import subprocess
 import gzip
@@ -132,7 +133,7 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
     for i in matched_strPerPkg:
         if i in packages_niw:
             res = (i,len(matched_strPerPkg[i]['unique']),len(matched_strPerPkg[i]['nonunique']))
-            if (len(matched_strPerPkg[i]['unique'])+len(matched_strPerPkg[i]['nonunique'])) < 10:
+            if ((len(matched_strPerPkg[i]['unique'])+len(matched_strPerPkg[i]['nonunique'])) < 10) and (len(matched_strPerPkg[i]['unique']) == 0):
                 bottomLimit_pkg_list.append(res)
             else:
                 sorted_pkg_list.append(res)
@@ -140,6 +141,9 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
     
     
     ### Generate HTML-output ###
+    
+    outputdata=open(os.path.join((str)(topleveldir),'overview.html'), 'w', encoding='utf-8')
+    
     html = '''<html>
         <head><style type="text/css">
             .tg  {border-collapse:collapse;border-spacing:0;}
@@ -156,14 +160,20 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
     html+='Following packages matched and have an entry in the whitelist:</br><ul>'
     for i in packages_w:
         html+='<li>%s</li>' % i
+        outputdata.write(html)
+        html=''
     html+='</ul></br>'
     
     html+='Following packages matched but have no entry in the whitelist:</br>(For more informations see the details)<ul>'
     if len(sorted_pkg_list)>0:
         html += '<table><tr><th>Package</th><th>Unique</th><th>Nonunique</th></tr>'
+        outputdata.write(html)
+        html=''
     for i in sorted_pkg_list:
         link='<a href="#%s">%s</a>' %(i[0], i[0])
         html+='<tr><td><li>%s</li></td><td>%s</td><td>%s</td></tr>' % (link,i[1],i[2])
+        outputdata.write(html)
+        html=''
     if len(sorted_pkg_list)>0:
         html+='</table></br>Detailed scanresults:</br>'
 
@@ -202,6 +212,8 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
 
         html+='''<tr>
         <td colspan="2">Unique:(%s)</br><ul>''' % len(matched_strPerPkg[i[0]]['unique'])
+        outputdata.write(html)
+        html=''
         
         for j in list(matched_strPerPkg[i[0]]['unique'])[:10]:
             html += '<li>%s</li>' % j
@@ -213,12 +225,13 @@ def generateOverview(filename, unpackreport, scantempdir, topleveldir, scanenv, 
         if len(matched_strPerPkg[i[0]]['nonunique'])>10:
             html += '<li>...</li>'
         html+='</ul></table></br></br>'
+        outputdata.write(html)
+        html=''
     html+='</body></html>'
     
     ### end generate html output ### 
     
     ### write the html-file to the desired output dir ###
-    outputdata=open(os.path.join((str)(topleveldir),'overview.html'), 'w')
     outputdata.write(html)
     outputdata.flush()
     outputdata.close()
