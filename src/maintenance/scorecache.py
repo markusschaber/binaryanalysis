@@ -63,21 +63,21 @@ def main(argv):
 		if section == "supportedlanguages":
 			try:
 				supported_languages = set()
-				if config.get(section, 'C'):
+				if config.get(section, 'C') == 'yes':
 					supported_languages.add('c',)
-				if config.get(section, 'CSharp'):
+				if config.get(section, 'CSharp') == 'yes':
 					supported_languages.add('csharp',)
-				if config.get(section, 'Java'):
+				if config.get(section, 'Java') == 'yes':
 					supported_languages.add('java',)
-				if config.get(section, 'JavaScript'):
+				if config.get(section, 'JavaScript') == 'yes':
 					supported_languages.add('javascript',)
-				if config.get(section, 'Php'):
+				if config.get(section, 'Php') == 'yes':
 					supported_languages.add('php',)
-				if config.get(section, 'Python'):
+				if config.get(section, 'Python') == 'yes':
 					supported_languages.add('python',)
-				if config.get(section, 'Ruby'):
+				if config.get(section, 'Ruby') == 'yes':
 					supported_languages.add('ruby',)
-				if config.get(section, 'ActionScript'):
+				if config.get(section, 'ActionScript') == 'yes':
 					supported_languages.add('actionscript',)
 			except Exception, e:
 				print >>sys.stderr, "Malformed configuration file. Exiting..."
@@ -96,12 +96,15 @@ def main(argv):
 		
 
 	for language in supported_languages:
+		print "Scores-Update started for scores_%s" % (language)
 		try:
 			query = "create table if not exists scores_%s (stringidentifier text, packages int, score real)" % (language)
 			c.execute(query)
 			query = "create index if not exists scores_%s_index on scores_%s(stringidentifier)" % (language, language)
 			c.execute(query)
+			query = "delete from scores_%s" % (language)
 			conn.commit()
+			print "Scores cleaned for scores_%s" % (language)
 
 			query = "select distinct stringidentifier from stringscache_%s" % (language)
 			c.execute(query)
